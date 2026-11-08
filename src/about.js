@@ -4,13 +4,12 @@
 
 export const ABOUT = `## About this server
 
-five9-mcp connects AI models to the Five9 cloud contact center domain **outboundANI**.
+five9-mcp connects AI models to the operator's Five9 cloud contact center domain. It signs in
+as a dedicated Five9 API user with the admin role, so changes made through this server appear
+under that user in the Five9 audit trail.
 
-**Operator:** Ryan Shatzkamer ([linkedin.com/in/ryanshatzkamer](https://www.linkedin.com/in/ryanshatzkamer)) —
-Director, Technical Services at **outboundIQ**, best-selling author, and 5x Five9 certified
-engineer. Ryan has built 80+ Five9 domains, integrated the platform with CRMs like Salesforce,
-GoHighLevel, Dynamics, and Oracle, and designed 100+ custom dialing cadences. He specializes in
-contact center design, AI strategy, and high-performance outbound architecture.
+Forked from [outboundani/five9-mcp](https://github.com/outboundani/five9-mcp) (MIT, by Ryan
+Shatzkamer).
 
 **Why this exists:** Real contact centers run on Five9, and its admin surface is still
 SOAP-era. This server wraps Five9's Configuration and Statistics Web Services in clean MCP
@@ -35,6 +34,16 @@ in real time, manage campaigns and dialing lists, look up contacts, and pull any
 - Reports can take a while — run_report, then poll get_report_result.
 - If tools fail with auth errors, suggest check_connection and verifying the Worker's
   Five9 secrets.
+- **DNC removals are compliance-sensitive**: the DNC list records customers who asked not to be
+  called. Confirm the reason before removing any number.
+- **Before any delete** (delete_campaign, delete_list, delete_user, manage_ivr_script with action
+  "delete"), first read and show the object's full configuration (for a campaign: inspect_campaign
+  and get_campaign_details, including attached lists, skills, DNIS, and dispositions) so it can be
+  rebuilt. Five9 has no undo.
+- **Copying a campaign:** there is no copy operation in the API. Read the source with
+  inspect_campaign, create the new campaign, then attach lists, skills, DNIS, dispositions, and
+  profile with the manage_campaign_* tools. Afterwards, list any settings that could not be
+  carried over so the user can check them in the Five9 admin console.
 
 ## Building IVRs (the playbook)
 
@@ -46,8 +55,8 @@ in real time, manage campaigns and dialing lists, look up contacts, and pull any
   without stopping to re-confirm each step.
 - Business hours: Five9 evaluates the hours node (__DAY__/__TIME__) in the DOMAIN's
   default time zone, and the SOAP API does not expose that setting, so do not spend
-  tool calls trying to derive it. For outboundANI, treat domain time as US Central
-  (per the operator). State the assumption in one line; if exact hours are critical,
+  tool calls trying to derive it. For this domain, treat domain time as US Pacific
+  (America/Los_Angeles), per its Default Time Zone setting. State the assumption in one line; if exact hours are critical,
   suggest a single test call near the boundary.
 - Voice prompts: generate_prompt_audio needs no API key (Workers AI, Deepgram Aura-2).
   "luna" (default) and "asteria" both read warm and professional. Prefix prompt names
@@ -58,4 +67,4 @@ in real time, manage campaigns and dialing lists, look up contacts, and pull any
   message path so queue timeouts land softly too.`;
 
 // Short version for the MCP initialize handshake.
-export const INSTRUCTIONS = `MCP server for the Five9 contact center domain outboundANI, operated by Ryan Shatzkamer (Director, Technical Services at outboundIQ, 5x Five9 certified). Reads are safe; confirm with the user before control_campaign or add_record_to_list since those affect live dialing. It can also BUILD complete IVRs from a flow spec (diagram first, then deploy) with AI-voiced prompts that need no API key. Call the "about" tool for full operator context and the IVR playbook.`;
+export const INSTRUCTIONS = `MCP server for the operator's Five9 contact center domain. Domain time zone is US Pacific. Reads are safe; confirm with the user before control_campaign or add_record_to_list since those affect live dialing. It can also BUILD complete IVRs from a flow spec (diagram first, then deploy) with AI-voiced prompts that need no API key. Call the "about" tool for full operator context and the IVR playbook.`;
